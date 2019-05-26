@@ -1,0 +1,87 @@
+%YAML 1.2
+---
+name: BentleyConfig
+file_extensions: [cfg]
+scope: source.bentleyconfig
+
+contexts:
+  prototype:
+    - include: comments
+
+  main:
+    - include: variables
+    - include: variableDirectives
+    - include: assignements
+    - include: conditionals
+    
+
+  variableDirectives:
+    - match: '(%lock|%undef|%level)'
+      scope: variable.function.bentleyconfig
+
+  conditionals:
+    - match: '(%if|%ifdef|ifndef)'
+      scope: keyword.control.conditional
+      push: conditionalBody
+
+  conditionalBody:
+    - include: variables
+    - include: assignementStatements
+    - match: '%else'
+      scope: keyword.control.conditional
+    - match: '%elif'
+      scope: keyword.control.conditional
+      push: conditionals
+    - match: '%endif'
+      scope: keyword.control.conditional
+      pop: true
+    - match: '(defined|exists)\('
+      scope: variable.function.bentleyconfig
+      push: boolFunction
+
+  boolFunction:
+    - include: variables
+    - match: \)
+      scope: variable.function.bentleyconfig
+      pop: true
+
+
+  comments:
+    - match: '#.*'
+      scope: comment.line.bentleyconfig
+
+  assignements:
+    - match: (=|:|<|>|\+)
+      scope: keyword.operator.bentleyconfig
+      push: assignementStatements
+
+  assignementStatements:
+    - include: variables
+    - meta_content_scope: string.unquoted
+    - match: (#|\n) 
+      pop: true
+
+  variables:
+    - include: variableExpressionVerbatim
+    - include: variableExpressionImmediate
+
+  variableExpressionVerbatim:
+    - match: \$\(
+      scope: variable.other.bentleyconfig
+      push: variableExpressionEndVerbatim
+
+  variableExpressionEndVerbatim:
+    - meta_scope: variable.other.bentleyconfig
+    - match: (\)|\n)
+      pop: true
+
+  variableExpressionImmediate:
+    - match: \$\{
+      scope: variable.other.bentleyconfig
+      push: variableExpressionEndImmediate
+
+  variableExpressionEndImmediate:
+    - meta_scope: variable.other.bentleyconfig
+    - match: (\}|\n)
+      pop: true
+
