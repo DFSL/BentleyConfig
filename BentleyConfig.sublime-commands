@@ -1,0 +1,4 @@
+[
+    { "caption": "BentleyConfig: Scope", "command": "show_scope_name" },
+    { "caption": "BentleyConfig: Search google", "command": "example" }
+]

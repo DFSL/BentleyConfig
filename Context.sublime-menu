@@ -1,0 +1,5 @@
+[
+    { "caption": "-", "id": "bentleyconfig" },
+    { "command": "show_scope_name", "mnemonic": "S" },
+    { "caption": "Search google", "command": "example", "mnemonic": "G" }
+]
