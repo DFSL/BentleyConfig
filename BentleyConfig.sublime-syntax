@@ -1,7 +1,7 @@
 %YAML 1.2
 ---
 name: BentleyConfig
-file_extensions: [cfg]
+file_extensions: [cfg,ucf,pcf]
 scope: source.bentleyconfig
 
 contexts:
@@ -9,15 +9,25 @@ contexts:
     - include: comments
 
   main:
-    - include: variables
+    - include: variableExprEval
     - include: variableDirectives
-    - include: assignements
+    - include: assignments
     - include: conditionals
-    
+    - include: variableName
+  
+  variableName:
+    - match: ^\s*\w+
+      scope: variable.other.readwrite.bentleyconfig
 
   variableDirectives:
     - match: '(%lock|%undef|%level)'
       scope: variable.function.bentleyconfig
+      push: variableDirectivesParam
+
+  variableDirectivesParam:
+    - match: \w+
+      scope: variable.parameter.bentleyconfig
+      pop: true
 
   conditionals:
     - match: '(%if|%ifdef|ifndef)'
@@ -25,8 +35,8 @@ contexts:
       push: conditionalBody
 
   conditionalBody:
-    - include: variables
-    - include: assignementStatements
+    - include: variableExprEval
+    - include: assignmentStatements
     - match: '%else'
       scope: keyword.control.conditional
     - match: '%elif'
@@ -40,7 +50,7 @@ contexts:
       push: boolFunction
 
   boolFunction:
-    - include: variables
+    - include: variableExprEval
     - match: \)
       scope: variable.function.bentleyconfig
       pop: true
@@ -50,38 +60,57 @@ contexts:
     - match: '#.*'
       scope: comment.line.bentleyconfig
 
-  assignements:
+  assignments:
     - match: (=|:|<|>|\+)
       scope: keyword.operator.bentleyconfig
-      push: assignementStatements
+      push: assignmentStatements
 
-  assignementStatements:
-    - include: variables
-    - meta_content_scope: string.unquoted
+  assignmentStatements:
+    - include: variableExprEval
+    - include: fileName
+    - include: pathName
     - match: (#|\n) 
       pop: true
 
-  variables:
-    - include: variableExpressionVerbatim
-    - include: variableExpressionImmediate
+  fileName:
+    - match: '[-\w]+\.\w+'
+      scope: string.unquoted
 
-  variableExpressionVerbatim:
+  pathName:
+    - match: '(\w:\\)?([-\w]+\\)*[-\w]+/'
+      scope: string.unquoted
+
+  variableExprEval:
+    - include: variableExprEvalVerbatim
+    - include: variableExprEvalImmediate
+
+  variableExprEvalVerbatim:
     - match: \$\(
-      scope: variable.other.bentleyconfig
-      push: variableExpressionEndVerbatim
+      scope: variable.function.bentleyconfig
+      push: variableExprEvalParamVerbatim
 
-  variableExpressionEndVerbatim:
-    - meta_scope: variable.other.bentleyconfig
-    - match: (\)|\n)
+  variableExprEvalParamVerbatim:
+    - match: \w+ 
+      scope: variable.parameter.bentleyconfig
+      set: variableExprEvalEndVerbatim
+
+  variableExprEvalEndVerbatim:
+    - match: \)
+      scope: variable.function.bentleyconfig
       pop: true
 
-  variableExpressionImmediate:
+  variableExprEvalImmediate:
     - match: \$\{
-      scope: variable.other.bentleyconfig
-      push: variableExpressionEndImmediate
+      scope: variable.function.bentleyconfig
+      push: variableExprEvalParamImmediate
 
-  variableExpressionEndImmediate:
-    - meta_scope: variable.other.bentleyconfig
-    - match: (\}|\n)
+  variableExprEvalParamImmediate:
+    - match: \w+ 
+      scope: variable.parameter.bentleyconfig
+      set: variableExprEvalEndImmediate
+
+  variableExprEvalEndImmediate:
+    - match: \}
+      scope: variable.function.bentleyconfig
       pop: true
 

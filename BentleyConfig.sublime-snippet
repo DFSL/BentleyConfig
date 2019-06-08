@@ -1,0 +1,10 @@
+<snippet>
+    <content>
+#----------------------------------------------------------------------
+# $1
+#----------------------------------------------------------------------
+    </content>
+    <tabTrigger>#--</tabTrigger>
+    <scope>source.bentleyconfig</scope>
+    <description>Section block</description>
+</snippet>
