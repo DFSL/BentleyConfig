@@ -9,108 +9,73 @@ contexts:
     - include: comments
 
   main:
-    - include: variableExprEval
-    - include: variableDirectives
-    - include: assignments
+    - include: assignmentStatement
     - include: conditionals
-    - include: variableName
-  
-  variableName:
-    - match: ^\s*\w+
-      scope: variable.other.readwrite.bentleyconfig
+    - include: directives
+    - include: functions
 
-  variableDirectives:
-    - match: '(%lock|%undef|%level)'
+  directives:
+    - match: '(%lock|%undef)'
       scope: variable.function.bentleyconfig
-      push: variableDirectivesParam
+      push:
+        - meta_content_scope: variable.other.readwrite.bentleyconfig
+        - match: \n
+          pop: true
+    - match: '%include'
+      scope: variable.function.bentleyconfig
+      push:
+        - meta_content_scope: string.unquoted
+        - include: variableEvaluation
+        - match: \n
+          pop: true
 
-  variableDirectivesParam:
-    - match: \w+
-      scope: variable.parameter.bentleyconfig
-      pop: true
+  variableEvaluation:
+    - match: '\$(\(|\{)'
+      scope: variable.function.bentleyconfig
+      push:
+        - meta_content_scope: variable.other.readwrite.bentleyconfig
+        - match: '(\)|\})'
+          scope: variable.function.bentleyconfig
+          pop: true
+
+  assignmentStatement:
+    - match: '^\s*(\w+)\b\s*(=|:|<|>|\+)\s*'
+      captures:
+        1: variable.other.readwrite.bentleyconfig
+        2: keyword.operator.bentleyconfig
+      push: 
+        - meta_content_scope: string.unquoted
+        - include: variableEvaluation
+        - match: (#|\n) 
+          pop: true
 
   conditionals:
-    - match: '(%if|%ifdef|ifndef)'
+    - match: '(%if||%elif|%else|%endif)\b'
       scope: keyword.control.conditional
-      push: conditionalBody
+    - match: '(%ifdef|%ifndef)\b'
+      scope: keyword.control.conditional
+      push:
+        - meta_content_scope: variable.other.readwrite.bentleyconfig
+        - match: \n
+          pop: true
 
-  conditionalBody:
-    - include: variableExprEval
-    - include: assignmentStatements
-    - match: '%else'
-      scope: keyword.control.conditional
-    - match: '%elif'
-      scope: keyword.control.conditional
-      push: conditionals
-    - match: '%endif'
-      scope: keyword.control.conditional
-      pop: true
-    - match: '(defined|exists)\('
+  functions:
+    - match: 'defined\s*\('
       scope: variable.function.bentleyconfig
-      push: boolFunction
-
-  boolFunction:
-    - include: variableExprEval
-    - match: \)
+      push:
+        - meta_content_scope: variable.other.readwrite.bentleyconfig
+        - match: '\)'
+          scope: variable.function.bentleyconfig
+          pop: true
+    - match: 'exists\s*\('
       scope: variable.function.bentleyconfig
-      pop: true
-
+      push:
+        - include: variableEvaluation
+        - meta_content_scope: string.unquoted
+        - match: '\)'
+          scope: variable.function.bentleyconfig
+          pop: true
 
   comments:
     - match: '#.*'
       scope: comment.line.bentleyconfig
-
-  assignments:
-    - match: (=|:|<|>|\+)
-      scope: keyword.operator.bentleyconfig
-      push: assignmentStatements
-
-  assignmentStatements:
-    - include: variableExprEval
-    - include: fileName
-    - include: pathName
-    - match: (#|\n) 
-      pop: true
-
-  fileName:
-    - match: '[-\w]+\.\w+'
-      scope: string.unquoted
-
-  pathName:
-    - match: '(\w:\\)?([-\w]+\\)*[-\w]+/'
-      scope: string.unquoted
-
-  variableExprEval:
-    - include: variableExprEvalVerbatim
-    - include: variableExprEvalImmediate
-
-  variableExprEvalVerbatim:
-    - match: \$\(
-      scope: variable.function.bentleyconfig
-      push: variableExprEvalParamVerbatim
-
-  variableExprEvalParamVerbatim:
-    - match: \w+ 
-      scope: variable.parameter.bentleyconfig
-      set: variableExprEvalEndVerbatim
-
-  variableExprEvalEndVerbatim:
-    - match: \)
-      scope: variable.function.bentleyconfig
-      pop: true
-
-  variableExprEvalImmediate:
-    - match: \$\{
-      scope: variable.function.bentleyconfig
-      push: variableExprEvalParamImmediate
-
-  variableExprEvalParamImmediate:
-    - match: \w+ 
-      scope: variable.parameter.bentleyconfig
-      set: variableExprEvalEndImmediate
-
-  variableExprEvalEndImmediate:
-    - match: \}
-      scope: variable.function.bentleyconfig
-      pop: true
-
